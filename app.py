@@ -1,35 +1,82 @@
 import streamlit as st
 from textblob import TextBlob
 from datetime import datetime
+import time
 import random
 
-st.set_page_config(page_title="💬 Advanced 3D Chatbot", page_icon="💬", layout="wide")
+st.set_page_config(page_title="💬 Modern Chatbot", page_icon="💬", layout="wide")
 
+# --- Initialize session ---
 if "history" not in st.session_state:
     st.session_state.history = []
 
 # --- CSS ---
 st.markdown("""
 <style>
-body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-serif; }
-#chat-container { max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #333; border-radius: 10px; margin-bottom:10px; }
-.chat-box { padding: 12px 18px; border-radius: 20px; margin: 6px 0; max-width: 70%; display: inline-block; word-wrap: break-word; transition: all 0.3s ease; }
-.user-msg { background-color: #1e2128; text-align: right; float: right; clear: both; }
-.bot-msg { background-color: #2c313c; float: left; clear: both; }
-.sentiment { font-size: 0.8em; opacity: 0.7; }
-.mood { font-size: 0.8em; opacity: 0.7; color: #f0c674; }
-.keyword { background-color: #44475a; padding: 2px 5px; border-radius: 4px; }
+body {
+    background-color: #0f1117;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+#chat-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #2c313c;
+    margin-bottom: 10px;
+    background-color: #1b1e27;
+    scroll-behavior: smooth;
+}
+.chat-box {
+    padding: 14px 20px;
+    border-radius: 20px;
+    margin: 8px 0;
+    max-width: 70%;
+    word-wrap: break-word;
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+.user-msg {
+    background-color: #2c313c;
+    text-align: right;
+    float: right;
+    clear: both;
+}
+.bot-msg {
+    background-color: #3a3f4c;
+    float: left;
+    clear: both;
+}
+.keyword {
+    background-color: #44475a;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.sentiment {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+.mood {
+    font-size: 0.8em;
+    opacity: 0.7;
+    color: #f0c674;
+}
+.typing {
+    font-style: italic;
+    opacity: 0.7;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # --- Mood detection ---
 def detect_mood(text):
     keywords = {
-        "happy":["happy","glad","joy","excited"],
-        "sad":["sad","unhappy","down"],
-        "tired":["tired","sleepy","exhausted"],
-        "frustrated":["frustrated","annoyed","upset"],
-        "neutral":[]
+        "happy": ["happy","glad","joy","excited"],
+        "sad": ["sad","unhappy","down"],
+        "tired": ["tired","sleepy","exhausted"],
+        "frustrated": ["frustrated","annoyed","upset"],
+        "neutral": []
     }
     for mood, words in keywords.items():
         for word in words:
@@ -41,9 +88,9 @@ def detect_mood(text):
 def generate_reply(mood, last_user=None):
     responses = {
         "happy":["Yay! You seem happy! 😄", "Awesome! Keep smiling! 🌟"],
-        "sad":["I'm here to listen. 💛", "Oh no! Do you want to talk?"],
+        "sad":["I'm here to listen. 💛", "Oh no! Want to talk about it?"],
         "tired":["Maybe take a break ☕", "Rest is important! 😴"],
-        "frustrated":["Deep breath 💨", "I understand. Let's calm down."],
+        "frustrated":["Take a deep breath 💨", "I understand. Let's calm down."],
         "neutral":["Alright 😐", "Got it!"]
     }
     reply = random.choice(responses.get(mood, ["Okay."]))
@@ -62,25 +109,28 @@ def highlight_keywords(text):
             highlighted.append(word)
     return " ".join(highlighted)
 
-# --- Chat rendering ---
-def render_chat():
-    chat_container = st.container()
-    chat_container.markdown('<div id="chat-container">', unsafe_allow_html=True)
+# --- Render chat ---
+def render_chat(typing_text=None):
+    container = st.container()
+    container.markdown('<div id="chat-container">', unsafe_allow_html=True)
     for chat in st.session_state.history:
-        # User message
-        chat_container.markdown(f"""
+        container.markdown(f"""
         <div class="chat-box user-msg">
             🧑‍💬 {highlight_keywords(chat['user'])} <div class="sentiment">*{chat['sentiment']}*</div> <div class="mood">({chat['mood']})</div>
         </div>
         """, unsafe_allow_html=True)
-        # Bot message
-        chat_container.markdown(f"""
+        container.markdown(f"""
         <div class="chat-box bot-msg">
             🤖 {chat['bot']} <div class="mood">({chat['mood']})</div>
         </div>
         """, unsafe_allow_html=True)
-    chat_container.markdown('</div>', unsafe_allow_html=True)
-    # Auto-scroll to bottom
+    if typing_text:
+        container.markdown(f"""
+        <div class="chat-box bot-msg typing">
+            🤖 {typing_text}
+        </div>
+        """, unsafe_allow_html=True)
+    container.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
         <script>
         var chatContainer = document.getElementById('chat-container');
@@ -88,9 +138,9 @@ def render_chat():
         </script>
     """, unsafe_allow_html=True)
 
-# --- Streamlit layout ---
-st.title("💬 Advanced Chatbot with 3D Buddy")
-st.write("Chat like ChatGPT — new messages appear at bottom!")
+# --- Streamlit UI ---
+st.title("💬 Modern Chatbot")
+st.write("Smooth scrolling, typing animation, keyword highlighting.")
 
 user_input = st.text_input("Type your message here...")
 
@@ -99,65 +149,21 @@ if user_input:
     sentiment_score = blob.sentiment.polarity
     sentiment = "😊 Positive" if sentiment_score > 0 else "😞 Negative" if sentiment_score < 0 else "😐 Neutral"
     mood = detect_mood(user_input)
-    timestamp = datetime.now().strftime("%H:%M")
     last_user_msg = st.session_state.history[-1]["user"] if st.session_state.history else None
     bot_reply = generate_reply(mood, last_user_msg)
 
-    st.session_state.history.append({"user": user_input, "bot": bot_reply, "sentiment": sentiment, "mood": mood, "time": timestamp})
+    # Add user message first
+    st.session_state.history.append({"user": user_input, "bot": "", "sentiment": sentiment, "mood": mood})
 
-render_chat()
+    # Show typing animation
+    for i in range(1, len(bot_reply)+1):
+        render_chat(typing_text=bot_reply[:i])
+        time.sleep(0.02)
 
-# --- 3D Buddy ---
-last_mood = st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'
+    # Replace typing with final bot message
+    st.session_state.history[-1]["bot"] = bot_reply
+    render_chat()
 
-st.components.v1.html(f"""
-<div id="three-container" style="width:100%; height:400px;"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
-<script>
-const container = document.getElementById('three-container');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({{alpha:true}});
-renderer.setSize(container.clientWidth, container.clientHeight);
-container.appendChild(renderer.domElement);
-
-const light = new THREE.DirectionalLight(0xffffff,1);
-light.position.set(1,2,3);
-scene.add(light);
-
-const loader = new THREE.GLTFLoader();
-let buddy;
-loader.load('assets/CuteRobot.glb',
-    function(gltf){{
-        buddy = gltf.scene;
-        buddy.scale.set(1.5,1.5,1.5);
-        buddy.position.set(0,-1,0);
-        scene.add(buddy);
-    }},
-    undefined,
-    function(error){{
-        console.error('Error loading GLB', error);
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({{color:0xff0000}});
-        buddy = new THREE.Mesh(geometry, material);
-        scene.add(buddy);
-    }}
-);
-
-camera.position.z = 5;
-
-function animate(){{
-    requestAnimationFrame(animate);
-    if(buddy){{
-        const mood = '{last_mood}';
-        if(mood==='happy') buddy.rotation.y +=0.05;
-        else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
-        else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
-        else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
-    }}
-    renderer.render(scene,camera);
-}}
-animate();
-</script>
-""", height=400)
+# Initial render
+if not user_input:
+    render_chat()
