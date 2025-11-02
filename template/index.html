@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Chatbot</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #e0e7ff, #f0f4ff);
+      text-align: center;
+      padding: 40px;
+    }
+    #chatbox {
+      width: 400px;
+      height: 400px;
+      overflow-y: scroll;
+      background: white;
+      margin: 20px auto;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    }
+    .user { color: #007bff; text-align: right; margin: 10px 0; }
+    .bot { color: #333; text-align: left; margin: 10px 0; }
+    input { width: 70%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; border: none; border-radius: 10px; background: #007bff; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>💬 Sentiment Analysis Chatbot</h2>
+  <div id="chatbox"></div>
+  <input type="text" id="userInput" placeholder="Type message...">
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    function sendMessage() {
+      const userText = document.getElementById("userInput").value;
+      if (userText === "") return;
+      const chatbox = document.getElementById("chatbox");
+      chatbox.innerHTML += `<div class='user'>You: ${userText}</div>`;
+      fetch("/get", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "msg=" + encodeURIComponent(userText)
+      })
+      .then(res => res.json())
+      .then(data => {
+        chatbox.innerHTML += `<div class='bot'>Bot (${data.sentiment}): ${data.response}</div>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
+        document.getElementById("userInput").value = "";
+      });
+    }
+  </script>
+</body>
+</html>
