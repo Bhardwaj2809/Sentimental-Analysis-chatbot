@@ -2,54 +2,58 @@ import streamlit as st
 from transformers import pipeline
 
 # --------------------------
+# Load model once (cached)
+# --------------------------
+@st.cache_resource
+def load_model():
+    return pipeline("sentiment-analysis")
+
+sentiment_analyzer = load_model()
+
+# --------------------------
 # Initialize session state
 # --------------------------
-if "user_input" not in st.session_state:
-    st.session_state["user_input"] = ""
-
-if "mood" not in st.session_state:
-    st.session_state["mood"] = None
-
 if "history" not in st.session_state:
     st.session_state["history"] = []
 
 # --------------------------
-# Define input clearing callback
+# App layout
 # --------------------------
-def clear_input():
-    st.session_state.user_input = ""
+st.title("💬 Sentiment Analysis Chatbot 🤖")
+st.write("Type your message and see how the bot reacts based on your sentiment!")
+
+# Input form (prevents instant reruns)
+with st.form(key="chat_form", clear_on_submit=True):
+    user_input = st.text_input("You:", "")
+    submitted = st.form_submit_button("Send")
 
 # --------------------------
-# Layout
+# Process user message
 # --------------------------
-st.title("Sentiment Analysis Chatbot 🤖")
-
-user_input = st.text_input(
-    "Type your message here:",
-    key="user_input",
-    on_change=clear_input
-)
-
-if user_input:
-    # Append user message to history
+if submitted and user_input:
+    # Add user message to chat
     st.session_state.history.append({"user": user_input})
-    
-    # Run sentiment analysis
-    sentiment_analyzer = pipeline("sentiment-analysis")
+
+    # Analyze sentiment
     result = sentiment_analyzer(user_input)[0]
-    
-    # Store mood in session state
-    st.session_state.mood = result['label']
-    
-    # Append bot response to history
-    st.session_state.history.append({"bot": f"Mood detected: {result['label']} ({result['score']:.2f})"})
+    label = result["label"]
+    score = result["score"]
+
+    # Bot reply based on sentiment
+    if label == "POSITIVE":
+        reply = f"😊 You seem positive! I'm glad you're feeling great. (Confidence: {score:.2f})"
+    elif label == "NEGATIVE":
+        reply = f"😞 I'm sorry to hear that. Want to talk more about it? (Confidence: {score:.2f})"
+    else:
+        reply = f"😐 Neutral mood detected. (Confidence: {score:.2f})"
+
+    st.session_state.history.append({"bot": reply})
 
 # --------------------------
 # Display conversation history
 # --------------------------
-st.subheader("Conversation History")
 for chat in st.session_state.history:
     if "user" in chat:
-        st.markdown(f"**You:** {chat['user']}")
+        st.markdown(f"**🧍You:** {chat['user']}")
     if "bot" in chat:
-        st.markdown(f"**Bot:** {chat['bot']}")
+        st.markdown(f"**🤖 Bot:** {chat['bot']}")
