@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-from transformers import pipeline
+from textblob import TextBlob
+import os
 
 app = Flask(__name__)
 
