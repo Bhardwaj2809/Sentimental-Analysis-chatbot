@@ -6,11 +6,11 @@ import random
 # --- Page config ---
 st.set_page_config(page_title="💬 Modern Chatbot", page_icon="💬", layout="wide")
 
-# --- Initialize session state ---
+# --- Initialize chat history ---
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# --- CSS for modern look ---
+# --- CSS for modern chat ---
 st.markdown("""
 <style>
 body {
@@ -154,7 +154,7 @@ def render_chat(typing_text=None):
 st.title("💬 Modern Chatbot")
 st.write("Animated, smooth, and modern chat interface.")
 
-# Input box
+# Input box with a key to allow clearing
 user_input = st.text_input("Type your message here...", key="user_input")
 
 if user_input:
