@@ -9,6 +9,7 @@ st.set_page_config(page_title="💬 Advanced 3D Chatbot", page_icon="💬", layo
 if "history" not in st.session_state:
     st.session_state.history = []
 
+# --- CSS ---
 st.markdown("""
 <style>
 body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-serif; }
@@ -26,6 +27,7 @@ body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-ser
 </style>
 """, unsafe_allow_html=True)
 
+# --- Mood detection ---
 def detect_mood(text):
     keywords = {
         "happy":["happy","glad","joy","excited"],
@@ -40,6 +42,7 @@ def detect_mood(text):
                 return mood
     return "neutral"
 
+# --- Bot reply generator ---
 def generate_reply(mood, last_user=None):
     responses = {
         "happy":["Yay! You seem happy! 😄", "Awesome! Keep smiling! 🌟"],
@@ -53,6 +56,7 @@ def generate_reply(mood, last_user=None):
         reply += f" Earlier you said: '{last_user}'"
     return reply
 
+# --- Highlight keywords ---
 def highlight_keywords(text):
     words = text.split()
     highlighted = []
@@ -63,6 +67,7 @@ def highlight_keywords(text):
             highlighted.append(word)
     return " ".join(highlighted)
 
+# --- Display messages ---
 def add_user_message(message, sentiment, mood, time_str):
     st.markdown(f"""
     <div class="chat-box user-msg show">
@@ -89,6 +94,7 @@ def add_bot_message(message, time_str, typing=True):
     """, unsafe_allow_html=True)
     return placeholder
 
+# --- Streamlit layout ---
 st.title("💬 Advanced Chatbot with 3D Buddy")
 st.write("Hi! Chat with me and watch my buddy react!")
 
@@ -114,6 +120,7 @@ for chat in st.session_state.history[::-1]:
         add_bot_message(chat['bot'], chat['time'], typing=False)
     st.divider()
 
+# --- 3D Buddy ---
 st.components.v1.html(f"""
 <html>
   <head>
@@ -124,10 +131,10 @@ st.components.v1.html(f"""
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/controls/DragControls.js"></script>
     <script>
-      window.addEventListener('DOMContentLoaded', (event) => {{
+      window.addEventListener('DOMContentLoaded', ()=>{
         let scene = new THREE.Scene();
         let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-        let renderer = new THREE.WebGLRenderer({{alpha:true}});
+        let renderer = new THREE.WebGLRenderer({alpha:true});
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -137,29 +144,40 @@ st.components.v1.html(f"""
 
         let loader = new THREE.GLTFLoader();
         let buddy;
-        loader.load('https://models.babylonjs.com/CuteRobot.glb', function(gltf){{
-            buddy = gltf.scene;
-            buddy.scale.set(1.5,1.5,1.5);
-            buddy.position.set(0,-1,0);
-            scene.add(buddy);
-        }});
+        loader.load('/assets/CuteRobot.glb',
+            function(gltf){
+                buddy = gltf.scene;
+                buddy.scale.set(1.5,1.5,1.5);
+                buddy.position.set(0,-1,0);
+                scene.add(buddy);
+                console.log('✅ GLB loaded successfully!');
+            },
+            undefined,
+            function(error){
+                console.error('❌ Error loading GLB:', error);
+                let geometry = new THREE.BoxGeometry();
+                let material = new THREE.MeshStandardMaterial({color:0xff0000});
+                buddy = new THREE.Mesh(geometry, material);
+                scene.add(buddy);
+            }
+        );
 
         camera.position.z = 5;
 
-        function animate(){{
+        function animate(){
             requestAnimationFrame(animate);
-            if(buddy){{
-                const mood = "{chat['mood'] if st.session_state.history else 'neutral'}";
+            if(buddy){
+                const mood = "{st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'}";
                 if(mood==='happy') buddy.rotation.y +=0.05;
                 else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
                 else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
                 else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
-            }}
+            }
             renderer.render(scene,camera);
-        }}
+        }
         animate();
-      }});
+      });
     </script>
   </body>
 </html>
-""", height=400)
+""", height=500)
