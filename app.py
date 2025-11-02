@@ -9,9 +9,6 @@ st.set_page_config(page_title="💬 Advanced 3D Chatbot", page_icon="💬", layo
 if "history" not in st.session_state:
     st.session_state.history = []
 
-if "mood_level" not in st.session_state:
-    st.session_state.mood_level = 50
-
 st.markdown("""
 <style>
 body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-serif; }
@@ -30,11 +27,13 @@ body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-ser
 """, unsafe_allow_html=True)
 
 def detect_mood(text):
-    keywords = {"happy":["happy","glad","joy","excited"],
-                "sad":["sad","unhappy","down"],
-                "tired":["tired","sleepy","exhausted"],
-                "frustrated":["frustrated","annoyed","upset"],
-                "neutral":[]}
+    keywords = {
+        "happy":["happy","glad","joy","excited"],
+        "sad":["sad","unhappy","down"],
+        "tired":["tired","sleepy","exhausted"],
+        "frustrated":["frustrated","annoyed","upset"],
+        "neutral":[]
+    }
     for mood, words in keywords.items():
         for word in words:
             if word in text.lower():
@@ -121,43 +120,45 @@ st.components.v1.html(f"""
     <style>body{{margin:0;overflow:hidden;}}</style>
   </head>
   <body>
-    <canvas id="scene"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/controls/DragControls.js"></script>
     <script>
-      let scene = new THREE.Scene();
-      let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-      let renderer = new THREE.WebGLRenderer({canvas:document.getElementById('scene'), alpha:true});
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      let light = new THREE.DirectionalLight(0xffffff,1);
-      light.position.set(1,2,3);
-      scene.add(light);
+      window.addEventListener('DOMContentLoaded', (event) => {{
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer({{alpha:true}});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-      let loader = new THREE.GLTFLoader();
-      let buddy;
-      loader.load('https://models.babylonjs.com/CuteRobot.glb', function(gltf){{
-          buddy = gltf.scene;
-          buddy.scale.set(1.5,1.5,1.5);
-          buddy.position.set(0,-1,0);
-          scene.add(buddy);
+        let light = new THREE.DirectionalLight(0xffffff,1);
+        light.position.set(1,2,3);
+        scene.add(light);
+
+        let loader = new THREE.GLTFLoader();
+        let buddy;
+        loader.load('https://models.babylonjs.com/CuteRobot.glb', function(gltf){{
+            buddy = gltf.scene;
+            buddy.scale.set(1.5,1.5,1.5);
+            buddy.position.set(0,-1,0);
+            scene.add(buddy);
+        }});
+
+        camera.position.z = 5;
+
+        function animate(){{
+            requestAnimationFrame(animate);
+            if(buddy){{
+                const mood = "{chat['mood'] if st.session_state.history else 'neutral'}";
+                if(mood==='happy') buddy.rotation.y +=0.05;
+                else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
+                else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
+                else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
+            }}
+            renderer.render(scene,camera);
+        }}
+        animate();
       }});
-
-      camera.position.z = 5;
-
-      let controls = new THREE.DragControls([], camera, renderer.domElement);
-      function animate(){{
-          requestAnimationFrame(animate);
-          if(buddy){{
-              const mood = "{chat['mood'] if st.session_state.history else 'neutral'}";
-              if(mood==='happy') buddy.rotation.y +=0.05;
-              else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
-              else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
-              else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
-          }}
-          renderer.render(scene,camera);
-      }}
-      animate();
     </script>
   </body>
 </html>
