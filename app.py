@@ -146,7 +146,7 @@ html_code = """
 
         let loader = new THREE.GLTFLoader();
         let buddy;
-        loader.load('/assets/CuteRobot.glb',
+        loader.load('assets/CuteRobot.glb',
             function(gltf){
                 buddy = gltf.scene;
                 buddy.scale.set(1.5,1.5,1.5);
@@ -184,4 +184,4 @@ html_code = """
 </html>
 """
 
-st.components.v1.html(html_code, height=500)
+st.components.v1.html(html_code, height=600)
