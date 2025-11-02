@@ -1,13 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from textblob import TextBlob
 import os
-from transformers import pipeline
-
 
 app = Flask(__name__)
-
-# Load Hugging Face sentiment model
-sentiment_pipeline = pipeline("sentiment-analysis")
 
 @app.route("/")
 def home():
@@ -16,20 +11,20 @@ def home():
 @app.route("/get", methods=["POST"])
 def chat():
     user_text = request.form["msg"]
-    result = sentiment_pipeline(user_text)[0]
-    label = result["label"]
-    score = result["score"]
+    blob = TextBlob(user_text)
+    sentiment_score = blob.sentiment.polarity
 
-    if label == "POSITIVE":
-        sentiment = f"Positive 😊 ({score:.2f})"
+    if sentiment_score > 0:
+        sentiment = f"Positive 😊 ({sentiment_score:.2f})"
         reply = "That's awesome! I'm glad you're feeling good."
-    elif label == "NEGATIVE":
-        sentiment = f"Negative 😞 ({score:.2f})"
+    elif sentiment_score < 0:
+        sentiment = f"Negative 😞 ({sentiment_score:.2f})"
         reply = "I'm sorry to hear that. Want to talk more about it?"
     else:
-        sentiment = f"Neutral 😐 ({score:.2f})"
+        sentiment = f"Neutral 😐 ({sentiment_score:.2f})"
         reply = "Alright, noted."
 
     return jsonify({"sentiment": sentiment, "response": reply})
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
