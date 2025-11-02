@@ -4,13 +4,14 @@ from datetime import datetime
 import time
 import random
 
+# --- Page Config ---
 st.set_page_config(page_title="💬 Modern Chatbot", page_icon="💬", layout="wide")
 
-# --- Initialize session ---
+# --- Initialize Session ---
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# --- CSS ---
+# --- CSS for modern chat ---
 st.markdown("""
 <style>
 body {
@@ -24,7 +25,6 @@ body {
     padding: 15px;
     border-radius: 12px;
     border: 1px solid #2c313c;
-    margin-bottom: 10px;
     background-color: #1b1e27;
     scroll-behavior: smooth;
 }
@@ -35,7 +35,6 @@ body {
     max-width: 70%;
     word-wrap: break-word;
     transition: all 0.3s ease;
-    opacity: 1;
 }
 .user-msg {
     background-color: #2c313c;
@@ -80,25 +79,25 @@ def detect_mood(text):
     }
     for mood, words in keywords.items():
         for word in words:
-            if word in text.lower():
+            if word.lower() in text.lower():
                 return mood
     return "neutral"
 
-# --- Bot reply generator ---
+# --- Bot reply ---
 def generate_reply(mood, last_user=None):
     responses = {
-        "happy":["Yay! You seem happy! 😄", "Awesome! Keep smiling! 🌟"],
-        "sad":["I'm here to listen. 💛", "Oh no! Want to talk about it?"],
-        "tired":["Maybe take a break ☕", "Rest is important! 😴"],
-        "frustrated":["Take a deep breath 💨", "I understand. Let's calm down."],
-        "neutral":["Alright 😐", "Got it!"]
+        "happy":["Yay! You seem happy! 😄","Awesome! Keep smiling! 🌟"],
+        "sad":["I'm here to listen. 💛","Oh no! Want to talk?"],
+        "tired":["Maybe take a break ☕","Rest is important! 😴"],
+        "frustrated":["Take a deep breath 💨","I understand. Let's calm down."],
+        "neutral":["Alright 😐","Got it!"]
     }
     reply = random.choice(responses.get(mood, ["Okay."]))
     if last_user:
         reply += f" Earlier you said: '{last_user}'"
     return reply
 
-# --- Highlight keywords ---
+# --- Keyword Highlighting ---
 def highlight_keywords(text):
     words = text.split()
     highlighted = []
@@ -109,21 +108,28 @@ def highlight_keywords(text):
             highlighted.append(word)
     return " ".join(highlighted)
 
-# --- Render chat ---
+# --- Render Chat ---
 def render_chat(typing_text=None):
     container = st.container()
     container.markdown('<div id="chat-container">', unsafe_allow_html=True)
     for chat in st.session_state.history:
+        # User message
         container.markdown(f"""
         <div class="chat-box user-msg">
-            🧑‍💬 {highlight_keywords(chat['user'])} <div class="sentiment">*{chat['sentiment']}*</div> <div class="mood">({chat['mood']})</div>
+            🧑‍💬 {highlight_keywords(chat['user'])} 
+            <div class="sentiment">*{chat['sentiment']}*</div> 
+            <div class="mood">({chat['mood']})</div>
         </div>
         """, unsafe_allow_html=True)
-        container.markdown(f"""
-        <div class="chat-box bot-msg">
-            🤖 {chat['bot']} <div class="mood">({chat['mood']})</div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Bot message
+        if chat['bot']:
+            container.markdown(f"""
+            <div class="chat-box bot-msg">
+                🤖 {chat['bot']} 
+                <div class="mood">({chat['mood']})</div>
+            </div>
+            """, unsafe_allow_html=True)
+    # Typing animation
     if typing_text:
         container.markdown(f"""
         <div class="chat-box bot-msg typing">
@@ -131,6 +137,7 @@ def render_chat(typing_text=None):
         </div>
         """, unsafe_allow_html=True)
     container.markdown('</div>', unsafe_allow_html=True)
+    # Smooth scroll
     st.markdown("""
         <script>
         var chatContainer = document.getElementById('chat-container');
@@ -138,7 +145,7 @@ def render_chat(typing_text=None):
         </script>
     """, unsafe_allow_html=True)
 
-# --- Streamlit UI ---
+# --- UI ---
 st.title("💬 Modern Chatbot")
 st.write("Smooth scrolling, typing animation, keyword highlighting.")
 
@@ -155,7 +162,7 @@ if user_input:
     # Add user message first
     st.session_state.history.append({"user": user_input, "bot": "", "sentiment": sentiment, "mood": mood})
 
-    # Show typing animation
+    # Typing animation
     for i in range(1, len(bot_reply)+1):
         render_chat(typing_text=bot_reply[:i])
         time.sleep(0.02)
