@@ -123,10 +123,10 @@ for chat in st.session_state.history[::-1]:
 # --- 3D Buddy ---
 last_mood = st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'
 
-st.components.v1.html(f"""
+html_code = """
 <html>
   <head>
-    <style>body{{margin:0;overflow:hidden;}}</style>
+    <style>body{margin:0;overflow:hidden;}</style>
   </head>
   <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
@@ -169,7 +169,7 @@ st.components.v1.html(f"""
         function animate(){
             requestAnimationFrame(animate);
             if(buddy){
-                const mood = "{last_mood}";
+                const mood = '""" + last_mood + """';
                 if(mood==='happy') buddy.rotation.y +=0.05;
                 else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
                 else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
@@ -182,4 +182,6 @@ st.components.v1.html(f"""
     </script>
   </body>
 </html>
-""", height=500)
+"""
+
+st.components.v1.html(html_code, height=500)
