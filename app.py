@@ -121,6 +121,8 @@ for chat in st.session_state.history[::-1]:
     st.divider()
 
 # --- 3D Buddy ---
+last_mood = st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'
+
 st.components.v1.html(f"""
 <html>
   <head>
@@ -167,7 +169,7 @@ st.components.v1.html(f"""
         function animate(){
             requestAnimationFrame(animate);
             if(buddy){
-                const mood = "{st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'}";
+                const mood = "{last_mood}";
                 if(mood==='happy') buddy.rotation.y +=0.05;
                 else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
                 else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
