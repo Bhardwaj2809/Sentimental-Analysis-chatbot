@@ -1,34 +1,55 @@
 import streamlit as st
 from transformers import pipeline
 
-# Load Hugging Face sentiment model
-sentiment_pipeline = pipeline("sentiment-analysis")
+# --------------------------
+# Initialize session state
+# --------------------------
+if "user_input" not in st.session_state:
+    st.session_state["user_input"] = ""
 
-# Streamlit App
-st.set_page_config(page_title="Sentiment Chatbot", page_icon="🤖")
-st.title("🤖 Sentiment Analysis Chatbot")
-st.write("Type something and I’ll tell you the sentiment and respond!")
+if "mood" not in st.session_state:
+    st.session_state["mood"] = None
 
-# User input
-user_input = st.text_input("You:", "")
+if "history" not in st.session_state:
+    st.session_state["history"] = []
 
-if st.button("Send") and user_input:
-    # Analyze sentiment
-    result = sentiment_pipeline(user_input)[0]
-    label = result["label"]
-    score = result["score"]
+# --------------------------
+# Define input clearing callback
+# --------------------------
+def clear_input():
+    st.session_state.user_input = ""
 
-    # Determine reply based on sentiment
-    if label == "POSITIVE":
-        sentiment = f"Positive 😊 ({score:.2f})"
-        reply = "That's awesome! I'm glad you're feeling good."
-    elif label == "NEGATIVE":
-        sentiment = f"Negative 😞 ({score:.2f})"
-        reply = "I'm sorry to hear that. Want to talk more about it?"
-    else:
-        sentiment = f"Neutral 😐 ({score:.2f})"
-        reply = "Alright, noted."
+# --------------------------
+# Layout
+# --------------------------
+st.title("Sentiment Analysis Chatbot 🤖")
 
-    # Display output
-    st.markdown(f"**Sentiment:** {sentiment}")
-    st.markdown(f"**Chatbot:** {reply}")
+user_input = st.text_input(
+    "Type your message here:",
+    key="user_input",
+    on_change=clear_input
+)
+
+if user_input:
+    # Append user message to history
+    st.session_state.history.append({"user": user_input})
+    
+    # Run sentiment analysis
+    sentiment_analyzer = pipeline("sentiment-analysis")
+    result = sentiment_analyzer(user_input)[0]
+    
+    # Store mood in session state
+    st.session_state.mood = result['label']
+    
+    # Append bot response to history
+    st.session_state.history.append({"bot": f"Mood detected: {result['label']} ({result['score']:.2f})"})
+
+# --------------------------
+# Display conversation history
+# --------------------------
+st.subheader("Conversation History")
+for chat in st.session_state.history:
+    if "user" in chat:
+        st.markdown(f"**You:** {chat['user']}")
+    if "bot" in chat:
+        st.markdown(f"**Bot:** {chat['bot']}")
