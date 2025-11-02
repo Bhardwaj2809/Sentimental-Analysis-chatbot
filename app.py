@@ -1,7 +1,6 @@
 import streamlit as st
 from textblob import TextBlob
 from datetime import datetime
-import time
 import random
 
 st.set_page_config(page_title="💬 Advanced 3D Chatbot", page_icon="💬", layout="wide")
@@ -119,7 +118,7 @@ st.components.v1.html(f"""
 const container = document.getElementById('three-container');
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({alpha:true});
+const renderer = new THREE.WebGLRenderer({{alpha:true}});
 renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
