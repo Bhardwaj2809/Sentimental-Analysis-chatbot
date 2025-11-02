@@ -1,33 +1,31 @@
-from flask import Flask, render_template, request, jsonify
+import streamlit as st
 from textblob import TextBlob
+import random
 
-app = Flask(__name__)
+# Initialize chat history
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+# User input
+user_input = st.text_input("Type your message here...")
 
-@app.route("/get", methods=["POST"])
-def get_bot_response():
-    user_text = request.form["msg"]
-    blob = TextBlob(user_text)
+if user_input:
+    blob = TextBlob(user_input)
     sentiment_score = blob.sentiment.polarity
+    sentiment = "😊 Positive" if sentiment_score > 0 else "😞 Negative" if sentiment_score < 0 else "😐 Neutral"
 
-    # Determine sentiment
+    # Generate simple bot response
     if sentiment_score > 0.1:
-        sentiment = "Positive 😊"
-        response = "That's great! I'm glad to hear that."
+        bot_reply = "That's great! I'm glad to hear that."
     elif sentiment_score < -0.1:
-        sentiment = "Negative 😞"
-        response = "I’m sorry to hear that. Want to talk more about it?"
+        bot_reply = "I’m sorry to hear that. Want to talk more about it?"
     else:
-        sentiment = "Neutral 😐"
-        response = "Okay, noted."
+        bot_reply = "Okay, noted."
 
-    return jsonify({
-        "sentiment": sentiment,
-        "response": response
-    })
+    # Save in session
+    st.session_state.history.append({"user": user_input, "bot": bot_reply, "sentiment": sentiment})
 
-if __name__ == "__main__":
-    app.run(debug=True)
+# Display chat
+for chat in st.session_state.history:
+    st.markdown(f"**You:** {chat['user']}")
+    st.markdown(f"**Bot:** {chat['bot']} ({chat['sentiment']})")
