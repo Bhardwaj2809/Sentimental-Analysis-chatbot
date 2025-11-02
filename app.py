@@ -111,10 +111,8 @@ if user_input:
 
     st.session_state.history.append({"user": user_input, "bot": bot_reply, "sentiment": sentiment, "mood": mood, "time": timestamp})
 
-    add_user_message(user_input, sentiment, mood, timestamp)
-    add_bot_message(bot_reply, timestamp)
-
-for chat in st.session_state.history[::-1]:
+# --- Display chat history (new messages at bottom) ---
+for chat in st.session_state.history:
     add_user_message(chat['user'], chat['sentiment'], chat.get("mood","neutral"), chat['time'])
     if chat["bot"]:
         add_bot_message(chat['bot'], chat['time'], typing=False)
@@ -124,64 +122,55 @@ for chat in st.session_state.history[::-1]:
 last_mood = st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'
 
 html_code = """
-<html>
-  <head>
-    <style>body{margin:0;overflow:hidden;}</style>
-  </head>
-  <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/controls/DragControls.js"></script>
-    <script>
-      window.addEventListener('DOMContentLoaded', ()=>{
-        let scene = new THREE.Scene();
-        let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-        let renderer = new THREE.WebGLRenderer({alpha:true});
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+<div id="three-container" style="width:100%; height:500px;"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+  const container = document.getElementById('three-container');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({alpha:true});
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
 
-        let light = new THREE.DirectionalLight(0xffffff,1);
-        light.position.set(1,2,3);
-        scene.add(light);
+  const light = new THREE.DirectionalLight(0xffffff,1);
+  light.position.set(1,2,3);
+  scene.add(light);
 
-        let loader = new THREE.GLTFLoader();
-        let buddy;
-        loader.load('assets/CuteRobot.glb',
-            function(gltf){
-                buddy = gltf.scene;
-                buddy.scale.set(1.5,1.5,1.5);
-                buddy.position.set(0,-1,0);
-                scene.add(buddy);
-                console.log('✅ GLB loaded successfully!');
-            },
-            undefined,
-            function(error){
-                console.error('❌ Error loading GLB:', error);
-                let geometry = new THREE.BoxGeometry();
-                let material = new THREE.MeshStandardMaterial({color:0xff0000});
-                buddy = new THREE.Mesh(geometry, material);
-                scene.add(buddy);
-            }
-        );
+  const loader = new THREE.GLTFLoader();
+  let buddy;
+  loader.load('assets/CuteRobot.glb',
+    function(gltf){
+      buddy = gltf.scene;
+      buddy.scale.set(1.5,1.5,1.5);
+      buddy.position.set(0,-1,0);
+      scene.add(buddy);
+    },
+    undefined,
+    function(error){
+      console.error('Error loading GLB', error);
+      const geometry = new THREE.BoxGeometry();
+      const material = new THREE.MeshStandardMaterial({color:0xff0000});
+      buddy = new THREE.Mesh(geometry, material);
+      scene.add(buddy);
+    }
+  );
 
-        camera.position.z = 5;
+  camera.position.z = 5;
 
-        function animate(){
-            requestAnimationFrame(animate);
-            if(buddy){
-                const mood = '""" + last_mood + """';
-                if(mood==='happy') buddy.rotation.y +=0.05;
-                else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
-                else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
-                else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
-            }
-            renderer.render(scene,camera);
-        }
-        animate();
-      });
-    </script>
-  </body>
-</html>
+  function animate(){
+    requestAnimationFrame(animate);
+    if(buddy){
+      const mood = '""" + last_mood + """';
+      if(mood==='happy') buddy.rotation.y +=0.05;
+      else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
+      else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
+      else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
+    }
+    renderer.render(scene,camera);
+  }
+  animate();
+</script>
 """
 
-st.components.v1.html(html_code, height=600)
+st.components.v1.html(html_code, height=500)
