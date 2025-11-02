@@ -130,35 +130,35 @@ scene.add(light);
 const loader = new THREE.GLTFLoader();
 let buddy;
 loader.load('assets/CuteRobot.glb',
-    function(gltf){
+    function(gltf){{
         buddy = gltf.scene;
         buddy.scale.set(1.5,1.5,1.5);
         buddy.position.set(0,-1,0);
         scene.add(buddy);
-    },
+    }},
     undefined,
-    function(error){
+    function(error){{
         console.error('Error loading GLB', error);
         const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({color:0xff0000});
+        const material = new THREE.MeshStandardMaterial({{color:0xff0000}});
         buddy = new THREE.Mesh(geometry, material);
         scene.add(buddy);
-    }
+    }}
 );
 
 camera.position.z = 5;
 
-function animate(){
+function animate(){{
     requestAnimationFrame(animate);
-    if(buddy){
+    if(buddy){{
         const mood = '{last_mood}';
         if(mood==='happy') buddy.rotation.y +=0.05;
         else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
         else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
         else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
-    }
+    }}
     renderer.render(scene,camera);
-}
+}}
 animate();
 </script>
 """, height=400)
