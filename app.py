@@ -13,17 +13,13 @@ if "history" not in st.session_state:
 st.markdown("""
 <style>
 body { background-color: #0e1117; color: #fff; font-family: 'Segoe UI', sans-serif; }
-.chat-box { padding: 12px 18px; border-radius: 20px; margin: 6px 0; max-width: 70%; display: inline-block; word-wrap: break-word; transition: all 0.3s ease; opacity:0; transform: translateY(20px); }
-.chat-box.show { opacity:1; transform: translateY(0); }
+#chat-container { max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #333; border-radius: 10px; margin-bottom:10px; }
+.chat-box { padding: 12px 18px; border-radius: 20px; margin: 6px 0; max-width: 70%; display: inline-block; word-wrap: break-word; transition: all 0.3s ease; }
 .user-msg { background-color: #1e2128; text-align: right; float: right; clear: both; }
 .bot-msg { background-color: #2c313c; float: left; clear: both; }
-.user-msg:hover { background-color: #292c34; transform: scale(1.03); }
-.bot-msg:hover { background-color: #3a3f4c; transform: scale(1.03); }
 .sentiment { font-size: 0.8em; opacity: 0.7; }
 .mood { font-size: 0.8em; opacity: 0.7; color: #f0c674; }
-.time { font-size: 0.7em; opacity: 0.5; }
 .keyword { background-color: #44475a; padding: 2px 5px; border-radius: 4px; }
-.stDivider { border-top: 1px solid #333; margin: 10px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -67,38 +63,37 @@ def highlight_keywords(text):
             highlighted.append(word)
     return " ".join(highlighted)
 
-# --- Display messages ---
-def add_user_message(message, sentiment, mood, time_str):
-    st.markdown(f"""
-    <div class="chat-box user-msg show">
-        🧑‍💬 {highlight_keywords(message)} <div class="sentiment">*{sentiment}*</div> <div class="mood">({mood})</div>
-    </div>
+# --- Chat rendering ---
+def render_chat():
+    chat_container = st.container()
+    chat_container.markdown('<div id="chat-container">', unsafe_allow_html=True)
+    for chat in st.session_state.history:
+        # User message
+        chat_container.markdown(f"""
+        <div class="chat-box user-msg">
+            🧑‍💬 {highlight_keywords(chat['user'])} <div class="sentiment">*{chat['sentiment']}*</div> <div class="mood">({chat['mood']})</div>
+        </div>
+        """, unsafe_allow_html=True)
+        # Bot message
+        chat_container.markdown(f"""
+        <div class="chat-box bot-msg">
+            🤖 {chat['bot']} <div class="mood">({chat['mood']})</div>
+        </div>
+        """, unsafe_allow_html=True)
+    chat_container.markdown('</div>', unsafe_allow_html=True)
+    # Auto-scroll to bottom
+    st.markdown("""
+        <script>
+        var chatContainer = document.getElementById('chat-container');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        </script>
     """, unsafe_allow_html=True)
-
-def add_bot_message(message, time_str, typing=True):
-    placeholder = st.empty()
-    if typing:
-        displayed_text = ""
-        for char in message:
-            displayed_text += char
-            placeholder.markdown(f"""
-            <div class="chat-box bot-msg show">
-                🤖 {displayed_text} <div class="time">(typing...)</div>
-            </div>
-            """, unsafe_allow_html=True)
-            time.sleep(0.02)
-    placeholder.markdown(f"""
-    <div class="chat-box bot-msg show">
-        🤖 {message} <div class="time">(at {time_str})</div>
-    </div>
-    """, unsafe_allow_html=True)
-    return placeholder
 
 # --- Streamlit layout ---
 st.title("💬 Advanced Chatbot with 3D Buddy")
-st.write("Hi! Chat with me and watch my buddy react!")
+st.write("Chat like ChatGPT — new messages appear at bottom!")
 
-user_input = st.chat_input("Type your message here...")
+user_input = st.text_input("Type your message here...")
 
 if user_input:
     blob = TextBlob(user_input)
@@ -111,66 +106,59 @@ if user_input:
 
     st.session_state.history.append({"user": user_input, "bot": bot_reply, "sentiment": sentiment, "mood": mood, "time": timestamp})
 
-# --- Display chat history (new messages at bottom) ---
-for chat in st.session_state.history:
-    add_user_message(chat['user'], chat['sentiment'], chat.get("mood","neutral"), chat['time'])
-    if chat["bot"]:
-        add_bot_message(chat['bot'], chat['time'], typing=False)
-    st.divider()
+render_chat()
 
 # --- 3D Buddy ---
 last_mood = st.session_state.history[-1]['mood'] if st.session_state.history else 'neutral'
 
-html_code = """
-<div id="three-container" style="width:100%; height:500px;"></div>
+st.components.v1.html(f"""
+<div id="three-container" style="width:100%; height:400px;"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-  const container = document.getElementById('three-container');
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
-  const renderer = new THREE.WebGLRenderer({alpha:true});
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
+const container = document.getElementById('three-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({alpha:true});
+renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(renderer.domElement);
 
-  const light = new THREE.DirectionalLight(0xffffff,1);
-  light.position.set(1,2,3);
-  scene.add(light);
+const light = new THREE.DirectionalLight(0xffffff,1);
+light.position.set(1,2,3);
+scene.add(light);
 
-  const loader = new THREE.GLTFLoader();
-  let buddy;
-  loader.load('assets/CuteRobot.glb',
+const loader = new THREE.GLTFLoader();
+let buddy;
+loader.load('assets/CuteRobot.glb',
     function(gltf){
-      buddy = gltf.scene;
-      buddy.scale.set(1.5,1.5,1.5);
-      buddy.position.set(0,-1,0);
-      scene.add(buddy);
+        buddy = gltf.scene;
+        buddy.scale.set(1.5,1.5,1.5);
+        buddy.position.set(0,-1,0);
+        scene.add(buddy);
     },
     undefined,
     function(error){
-      console.error('Error loading GLB', error);
-      const geometry = new THREE.BoxGeometry();
-      const material = new THREE.MeshStandardMaterial({color:0xff0000});
-      buddy = new THREE.Mesh(geometry, material);
-      scene.add(buddy);
+        console.error('Error loading GLB', error);
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshStandardMaterial({color:0xff0000});
+        buddy = new THREE.Mesh(geometry, material);
+        scene.add(buddy);
     }
-  );
+);
 
-  camera.position.z = 5;
+camera.position.z = 5;
 
-  function animate(){
+function animate(){
     requestAnimationFrame(animate);
     if(buddy){
-      const mood = '""" + last_mood + """';
-      if(mood==='happy') buddy.rotation.y +=0.05;
-      else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
-      else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
-      else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
+        const mood = '{last_mood}';
+        if(mood==='happy') buddy.rotation.y +=0.05;
+        else if(mood==='sad') buddy.rotation.x = 0.1*Math.sin(Date.now()*0.005);
+        else if(mood==='tired') buddy.rotation.z = 0.02*Math.sin(Date.now()*0.005);
+        else if(mood==='frustrated') buddy.position.y = 0.1*Math.sin(Date.now()*0.01);
     }
     renderer.render(scene,camera);
-  }
-  animate();
+}
+animate();
 </script>
-"""
-
-st.components.v1.html(html_code, height=500)
+""", height=400)
